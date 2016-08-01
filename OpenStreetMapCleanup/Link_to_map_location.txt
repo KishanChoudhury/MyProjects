@@ -1,0 +1,5 @@
+Link:
+https://www.openstreetmap.org/relation/65606
+City chosen:London
+Reason of choice: 
+Unfortunately, the areas I am familiar with do not have enough data in OpenStreetMap. So, I had to choose a random city which has enough data suitable for analysis. So, I cannot rely on my local knowledge of the area to perform cleansing operation but I feel, such a situation is commonly faced by data analysts

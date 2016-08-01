@@ -1,0 +1,6 @@
+http://stackoverflow.com/questions/12792998/elementtree-iterparse-strategy
+http://stackoverflow.com/questions/20796714/what-is-the-way-to-start-mongo-db-from-windows-7-64-bit
+https://docs.mongodb.com/v3.0/reference/method/db.collection.distinct/
+https://discussions.udacity.com/t/iterative-parsing-using-iterparse/167980/2
+https://discussions.udacity.com/t/reducing-memory-footprint-when-processing-large-datasets-in-xml/37571/3
+https://discussions.udacity.com/t/purpose-of-yield/167814

@@ -1,0 +1,484 @@
+---
+title: "RedWineEDA"
+author: "Kishan Choudhury"
+date: "30 June 2016"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+We are presented with  a dataset containing information related to red wine.
+The question that we are going to ask ourselves is that what factors affect quality.
+
+```{r  packages}
+#loading the libraries
+library(ggplot2)
+library(corrplot)
+library(gridExtra)
+```
+```{r functions}
+dist_cont <- function(feature) {
+    ggplot(data=wq, aes_string(x = feature)) + geom_histogram()
+}
+
+dist_disc <- function(feature) {
+    ggplot(data=wq, aes_string(x = feature)) + geom_bar()
+}
+```
+
+
+#Structure of dataset
+```{r}
+#Reading the data from the csv file
+wq<-read.csv("wineQualityReds.csv")
+str(wq)
+summary(wq)
+```
+
+As we can see, the dataset contains information about Red Wine. It has 13 variables and 1599 observations
+
+#Univariate Plot Section
+
+```{r}
+#lets have a look at the distribution of various variables
+#Since quality is a discreete variable, so creating a bar chart
+dist_disc("quality")
+summary(wq$quality)
+table(wq$quality)
+```
+
+It seems there are just integer values of quality. We might need to transform the variable going forward. Most of the wine samples have a quality of 5,6 or 7.
+
+```{r}
+#fixed.acidity
+dist_cont("fixed.acidity")
+summary(wq$fixed.acidity)
+```
+
+Fixed acidity is slightly skewed to the right. Most of the values are between 6 and 10.
+
+```{r}
+#volatile.acidity
+dist_cont("volatile.acidity")
+summary(wq$volatile.acidity)
+```
+
+Volatile acidity is slightly skewed to the right. There are a few outliers which might be responsible for influencing the quality. 
+
+```{r}
+#citric.acid
+dist_cont("citric.acid")
+ggplot(data=wq,aes(x=citric.acid))+geom_histogram(binwidth=.01)
+```
+
+After reducing the binwidth, we see that the citric.acid value increases and decreases a few times with a lot of samples having 0 
+
+```{r}
+#residual.sugar
+dist_cont("residual.sugar")
+summary(wq$residual.sugar)
+```
+
+Residual.sugar has a positively skewed distribution
+
+```{r}
+#chlorides
+dist_cont("chlorides")
+summary(wq$chlorides)
+```
+
+Chlorides also has a positively skewed distribution similar to Residual.sugar. We can log transform the data to have a better idea.
+
+```{r}
+#free.sulfur.dioxide
+dist_cont("free.sulfur.dioxide")
+summary(wq$free.sulfur.dioxide)
+```
+
+free.sulfur.dioxide has a positively skewed distribution with a few outliers.
+
+```{r}
+#total.sulfur.dioxide
+dist_cont("total.sulfur.dioxide")
+summary(wq$total.sulfur.dioxide)
+table(wq$total.sulfur.dioxide)
+```
+
+Total.sulfur.dioxide has a few outliers at around 289. It seems total.sulfur.dioxide has mostly integer values. It has a positively skewed distribution.
+
+```{r}
+#density
+dist_cont("density")
+summary(wq$density)
+```
+
+Density has normal distribution and it varies across a very small scale.
+
+```{r}
+#pH
+dist_cont("pH")
+summary(wq$pH)
+```
+
+pH has a normal distribution. As this is a measure of acidity, this might have correlation with  fixed.acidity and volatile.acidity
+
+```{r}
+#sulphates
+dist_cont("sulphates")
+summary(wq$sulphates)
+```
+
+Sulphates have a few outliers at the positive end of the scale.
+
+```{r}
+#alcohol
+dist_cont("alcohol")
+summary(wq$alcohol)
+```
+
+Alcohol has a positively skewed distribution. Alcohol seems to be a very important variable and it might have a strong correlation with quality.
+
+
+#Univariate Analysis
+
+Variables citric.acid,residual.sugar,chlorides,free.sulphur.dioxide,total.sulphur.dioxide and sulphates have a skewed distribution with a long right tail.
+
+For the positively skewed variables, lets transform them using log transofrmations so as to obtain a normal distribution
+
+```{r Transformations}
+#adding 1 to citric.acid for log transformation
+p1<-ggplot(aes(x=citric.acid+1),data=wq)+
+  geom_histogram()+
+  scale_x_continuous(trans="log10")
+p2<-ggplot(aes(x=residual.sugar),data=wq)+
+  geom_histogram()+
+  scale_x_continuous(trans="log10")
+p3<-ggplot(aes(x=chlorides),data=wq)+
+  geom_histogram()+
+  scale_x_continuous(trans="log10")
+p4<-ggplot(aes(x=free.sulfur.dioxide),data=wq)+
+  geom_histogram()+
+  scale_x_continuous(trans="log10")
+p5<-ggplot(aes(x=total.sulfur.dioxide),data=wq)+
+  geom_histogram()+
+  scale_x_continuous(trans="log10")
+p6<-ggplot(aes(x=sulphates),data=wq)+
+  geom_histogram()+
+  scale_x_continuous(trans="log10")
+grid.arrange(p1,p2,p3,p4,p5,p6,ncol=3)
+
+```
+---
+###Main feature of Interest
+
+The main feature of interest in this dataset is the quality of Wine and this investigation will be directed towards finding what factors affect the quality.
+
+###Other features of interest which will help us support our investigation
+
+From first glance, it seems fixed.acidity, volatile.acidity,citric.acid,alcohol
+will be features that might have an influence on quality.
+
+The univariate analysis does not provide us much insight. We need to look into some of the variables together inorder to figure out which of them might be related.
+
+#Bivariate Analysis
+
+Lets have a look at the correlation between various variables
+
+```{r}
+M<-cor(wq)
+corrplot(M,method="circle")
+```
+
+From the plots , it seems that there is strong positive correlation between 
+
+1. fixed.acidity and citric.acid
+
+2. fixed.acidity and density
+
+3. free.sulfur.dioxide and total.sulfur.dioxide
+
+Also, there is strong negartive correlation between 
+
+1. fixed.acidity and pH
+
+2. volatile.acidity and citric.acid
+
+3. pH and citric.acid
+
+---
+Lets have a look at some of these relations.
+
+Positive relationships: 
+
+```{r}
+#fixed.acidity and citric acid
+ggplot(aes(x=fixed.acidity,y=citric.acid),data=wq)+
+  geom_point()+
+  geom_smooth()
+#fixed.acidity and density
+ggplot(aes(x=fixed.acidity,y=density),data=wq)+
+  geom_point()+
+  geom_smooth()
+#free.sulfur.dioxide and total.sulfur.dioxide
+ggplot(aes(x=free.sulfur.dioxide,y=total.sulfur.dioxide),data=wq)+
+  geom_point()+
+  geom_smooth()
+```
+---
+Negative relationships: 
+---
+```{r}
+#fixed.acidity and pH
+ggplot(aes(x=fixed.acidity,y=pH),data=wq)+
+  geom_point()+
+  geom_smooth()
+#volatile.acidity and citric.acid
+ggplot(aes(x=volatile.acidity,y=citric.acid),data=wq)+
+  geom_point()+
+  geom_smooth()
+#pH and citric.acid
+ggplot(aes(x=pH,y=citric.acid),data=wq)+
+  geom_point()+
+  geom_smooth()
+```
+
+The relationship between pH and fixed.acidity and between pH and citric.acid seems obvious as pH is a measure of acidity.Also, free.sulfur.dioxide being a part of total.sulfur.dioxide explains the relationship between them.
+
+So, going forward, we will narrow down our approach and not look at variables which are dependent on some other variable.
+
+###Creating a new Variable
+
+We need to have a look at the independent variables together with quality.
+But first, it might be a good idea to create another variable quality.grade which will have 3 grades: bad, average and good.
+
+```{r}
+wq$quality.grade<-factor(wq$quality)
+levels(wq$quality.grade)<-list(
+  bad=c("3","4"),
+  average=c("5","6"),
+  good=c("7","8")
+)
+
+ggplot(aes(x=wq$quality.grade),data=wq)+
+  geom_bar(stat="count")
+```
+
+Now,lets have a look at the independent variables and quality
+
+```{r}
+#fixed.acidity and quality
+p1<-ggplot(aes(y=fixed.acidity,x=quality.grade),data=wq)+
+  geom_boxplot()
+#volatile.acidity and quality
+p2<-ggplot(aes(y=volatile.acidity,x=quality.grade),data=wq)+
+  geom_boxplot()
+#citric.acid and quality
+p3<-ggplot(aes(y=citric.acid,x=quality.grade),data=wq)+
+  geom_boxplot()
+#residual.sugar and quality
+p4<-ggplot(aes(y=residual.sugar,x=quality.grade),data=wq)+
+  geom_boxplot()
+#chlorides and quality
+p5<-ggplot(aes(y=chlorides,x=quality.grade),data=wq)+
+  geom_boxplot()
+#free.sulfur.dioxide and quality
+p6<-ggplot(aes(y=free.sulfur.dioxide,x=quality.grade),data=wq)+
+  geom_boxplot()
+#density and quality
+p7<-ggplot(aes(y=density,x=quality.grade),data=wq)+
+  geom_boxplot()
+#sulphates and quality
+p8<-ggplot(aes(y=sulphates,x=quality.grade),data=wq)+
+  geom_boxplot()
+#alcohol and quality
+p9<-ggplot(aes(y=alcohol,x=quality.grade),data=wq)+
+  geom_boxplot()
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,ncol=3)
+```
+
+From the above plots,we can conclude that the following variables have a significant correlation with quality:
+
+fixed.acidity:positive
+
+volatile.acidity:negative
+
+citric.acid:positive
+
+sulphates:positive
+
+
+###Strongest Relatioship
+
+The strongest relationship seems to be between volatile.acidity and quality but we have to keep in mind that the various variables are not present in the same unit.The relation between citric.acid and quality is also quite strong.For rest of the variables, although there does not seem to be a clear linear relationship but in case of alcohol, the percentage seems to be considerably higher for the good quality ones. For others, there doesnt seem to be very clear patterns.
+
+However, one important point to note is that, although there is a  linear relationship between some variables such as fixed.acidity and quality, it is obvious that we cannot increase the fixed.acidity infinitely and expect the quality to increase infinitely as well. There must be some upper bound.From common sense, we can say that anything whose quality depends on taste has to have a proper balance of various ingredients or different tastes.Thus, it may be a good idea to find the ratio of various variables and whether they have any relation to quality.This may help us uncover hidden trends.
+
+Now, the strongest relationhip is between volatile.acidty and quality
+
+```{r}
+cor(wq$volatile.acidity,wq$quality)
+```
+
+We want to combine variables which increases the strength of the relationship.After a lot of trial and error, it seems the combination of volatile.acidity,alcohol,density,sulphates have a strong correlation with quality.
+
+```{r}
+cor(wq$volatile.acidity/wq$alcohol/wq$density/wq$sulphates,wq$quality)
+ggplot(aes(x=quality.grade,y=wq$volatile.acidity/wq$alcohol/wq$density/wq$sulphates),data=wq)+
+  geom_boxplot()
+```
+
+The variance also decreases with increase in quality.
+
+Lets try a combination of variables with positive correlation
+
+```{r}
+cor(wq$fixed.acidity/wq$total.sulfur.dioxide/wq$chlorides/wq$residual.sugar,wq$quality)
+
+ggplot(aes(x=quality.grade,y=wq$fixed.acidity/wq$total.sulfur.dioxide/wq$chlorides/wq$residual.sugar),data=wq)+
+  geom_boxplot()
+```
+
+This is not as strong as the negative relationship.Further inclusion of more variables in the equation does not strengthen the relation. 
+
+---
+#Multivariate Plots
+
+Let's try to look at multiple variables at the same time.We are looking at the pairs of independent variables which have a strong correlation with each other and how the quality varies with it.
+
+```{r}
+#volatile acidity, alcohol and quality
+ggplot(aes(y=volatile.acidity,x=alcohol),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_colour_brewer(direction=1)
+```
+
+The darker points which represent better quality wine are concentrated to the bottom right corner which is in line with our understanding so far, quality has a negative correlation with volatile.acidity and positively correlated with alcohol.
+
+```{r}
+#fixed acidity, citric acid and quality
+ggplot(aes(y=fixed.acidity,x=citric.acid),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_color_brewer(direction = 1)
+```
+
+In this case, the pattern is not very clear
+
+```{r}
+#fixed acidity,density and quality
+ggplot(aes(y=fixed.acidity,x=density),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_color_brewer(direction = 1)
+```
+
+Fixed.acidity has a positive correlation with quality. It is not influenced by density.
+
+```{r}
+#free.sulfur.dioxide,total.sulfur.dioxide and quality
+ggplot(aes(y=free.sulfur.dioxide,x=total.sulfur.dioxide),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_color_brewer(direction = 1)
+```
+
+Here again, the pattern is not very clear.
+
+```{r}
+# fixed.acidity ,pH and quality
+ggplot(aes(y=fixed.acidity,x=pH),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_color_brewer(direction = 1)
+```
+
+Most of the darker points are concentrated to the left. But the pattern is not very clear.
+
+```{r}
+# volatile.acidity,citric.acid and quality
+ggplot(aes(y=volatile.acidity,x=citric.acid),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_color_brewer(direction = 1)
+```
+
+This plot again reflects the negative correlation between volatile.acidity and alcohol
+
+```{r}
+# pH,citric.acid and quality
+ggplot(aes(y=pH,x=citric.acid),data=wq)+
+  geom_jitter(aes(color=factor(quality)))+
+  geom_smooth()+
+  scale_color_brewer(direction = 1)
+```
+
+Most of the dark points are concentrated to the bottom right corner which shows the negative correlation between pH and quality and the positive correlation between citric.acid and quality.
+
+All the multivariate plots that we saw above are in line with our understanding so far.
+
+###Predictive model
+
+Since the relation between the ratio of volatile.acidity and alcohol to quality is linear, lets create a predictive model for the same.
+
+```{r}
+m1<-lm(formula=quality~(volatile.acidity),data=wq)
+m2<-update(m1,~.+wq$alcohol)
+summary(m1)
+summary(m2)
+
+```
+
+#Final Plots and Summary
+
+### Plot One
+
+```{r}
+ggplot(aes(y=volatile.acidity,x=quality.grade),data=wq)+
+  geom_boxplot()+
+  ggtitle( "Volatile Acidity vs Quality")+
+  labs(x="Quality Category",y= "Volatile Acidity(acetic acid - g / dm^3)")
+cor(wq$volatile.acidity,wq$quality)
+```
+
+### Description One
+
+Among the various independent variables,the strongest correlation is between volatile acidity and quality.
+
+### Plot Two
+```{r}
+
+ggplot(aes(x=quality.grade,y=wq$volatile.acidity/wq$alcohol/wq$density/wq$sulphates),data=wq)+
+  geom_boxplot()+
+   ggtitle( "Volatile Acidity:Alcohol:Density:Sulphates vs Quality")+
+  labs(x="Quality Category",y= "Volatile Acidity(g / dm^3):Alcohol(%):Density(g / cm^3):Sulphates(g / dm3)")
+
+cor(wq$volatile.acidity/wq$alcohol/wq$density/wq$sulphates,wq$quality)
+```
+
+### Description Two
+
+We want to combine variables which increases the strength of the relationship.After a lot of trial and error, it seems the combination of volatile.acidity,alcohol,density,sulphates have a strong correlation with quality.  As we can see, the above mix of variables has a correlation of -0.4924791 which is significantly higher(absolute value) compared to any of the individual variables.
+
+### Plot Three
+```{r}
+wq$quality<-factor(wq$quality)
+ggplot(aes(y=volatile.acidity,x=alcohol),data=wq)+
+  geom_jitter(aes(color=quality))+
+  geom_smooth()+
+  scale_colour_brewer(direction=1)+
+  ggtitle( "Volatile Acidity vs Alcohol w.r.t. Quality")+
+  labs(x="Alcohol(% by volume)",y= "Volatile Acidity(acetic acid - g / dm^3)")
+```
+
+### Description Three
+
+Volatile acidity and alcohol have the strongest influence on quality. On plotting them together, a clear pattern emerges and we can see that most of the darker points ( representing higher quality) are concentrated on the bottom right corner.This reinforces our earlier findings about the correlation between volatile acidity and quality and between alcohol and quality.
+
+# Reflection
+
+First we plotted the indiviadual variables and checked out their distribution.One problem that we faced here was the lack of enough data. There were very few samples for the various wine qualities and most of them were of the average quality.We found the correlation between the various variables and also with respect to quality and then we explored the strongest relationships in detail.This helped us provide a direction to our analysis and distinguish important variables from not so important ones.As is the case with any consumable item, the quality often depends on a combination of ingredients or various tastes rather than individual variables.We were able to achieve a stronger correlation with quality by combining various variables together.The multivariate plots helped enforce our understanding of the relationships so far.Finally, we created a predictive model which is able to account for 31.7 percent of the variance.
+
+  One problem that is often faced with such items is that the relationships between the independent variables and the dependent variable does not continue to be in one direction. There is a lower and an upper limit for all the variables. It is more of an optimization problem where we need to find the perfect mix.Furthermore, the quality in this case is determined by individuals and the sense of taste can vary from person to person.Also, some people can be more generous compared to others in their rating. One way to solve this can be to have all the samples tasted by a larger sample of people and then find the average of the rating for each of the samples.  
+
