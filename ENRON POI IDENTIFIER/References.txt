@@ -1,0 +1,4 @@
+sklearn documentation
+https://discussions.udacity.com/t/gridsearchcv-not-able-to-find-the-best-configuration/188752
+https://discussions.udacity.com/t/gridsearchcv-and-testingtraining-data/36107/14
+udacity Machine learning course
