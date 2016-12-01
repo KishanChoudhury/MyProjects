@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-<script src="d3.v3.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
 <style>
 h2{
 	text-align:center;
@@ -41,6 +41,9 @@ h2{
 var nested_data,xscale,yscale;
 var Agegroups=[];
 var pclass_list=[];
+function key_func(d)
+		{
+		return d['key'];}
 function map_age_to_group(x){
     if(x<10)
     {    return '0-9';}
@@ -85,7 +88,7 @@ function draw_line(pclass)
 				{
 					if(d.values[0].values[i].key==pclass)
 					{
-						return yscale(d['values'][0]['values'][i]['values']['survivor_count']);
+						return yscale(d['values'][0]['values'][i]['values']['survival_percentage']);
 					}
 				
 				} 
@@ -114,7 +117,7 @@ function draw_line(pclass)
 				{
 					if(d.values[1].values[i].key==pclass)
 					{
-						return yscale(d['values'][1]['values'][i]['values']['survial_percentage']);
+						return yscale(d['values'][1]['values'][i]['values']['survival_percentage']);
 					}
 				
 				} 
@@ -129,7 +132,7 @@ function draw_line(pclass)
 				{
 					if(d.values[0].values[i].key==pclass)
 					{
-						return yscale(d['values'][0]['values'][i]['values']['survial_percentage']);
+						return yscale(d['values'][0]['values'][i]['values']['survival_percentage']);
 					}
 				
 				} 
@@ -147,21 +150,121 @@ function draw_line(pclass)
 		
 		
 	
-		/*
-		d3.select('svg')
+		var r;
+		//plotting male points
+		d3.select('svg').select('g.male_circles').remove();
+		d3.select('svg').select('g.female_circles').remove();
+		
+		var male_circles= d3.select('svg')
+		  .append('g').attr('class','male_circles')	
 		  .selectAll('circle')
-		  .data(nested_data)
-		  .enter()
+		  .data(nested_data,key_func)
+		  
+		
+		 // male_circles.exit().remove();
+		  
+		  male_circles.enter()
 		  .append('circle')
+		  .transition()
+		  .duration(500)
+		  .attr('class','male_circle')
+		  .attr('cx',function(d){
+				
+				return xscale(d['key']);
+		  })
+		  .attr('cy',function(d){
+			if(typeof d['values'][1] !='undefined'){
+			if (d['values'][1]['key']=='male')
+			{
+				for(i=0;i<d.values[1].values.length;i++)
+				{
+					if(d.values[1].values[i].key==pclass)
+					{	
+						r=(d['values'][1]['values'][i]['values']['survival_percentage']);
+						return yscale(r);
+					}
+				
+				} 
+				r=0;
+				return yscale(r); 
+				
+			}
+		}
+		else if(typeof d['values'][0]!='undefined'){
+			if(d['values'][0].key=='male')
+			{
+				for(i=0;i<d.values[0].values.length;i++)
+				{
+					if(d.values[0].values[i].key==pclass)
+					{
+						r=(d['values'][0]['values'][i]['values']['survival_percentage']);
+						return yscale(r);
+					}
+				
+				} 
+				r=0;
+				return yscale(r);
+					
+			}
+		}
+		else
+		{		
+				r=0;
+				return yscale(r);
+		}
+		
+		}
+		)
+		  .attr('r',3)
+		   .attr('fill','steelblue')
+		  .attr('opacity',.7);
+		  
+		r=0;  
+	    //plotting female points
+		var female_circles=d3.select('svg')
+		  .append('g').attr('class','female_circles')		
+		  .selectAll('circle')
+		  .data(nested_data,key_func)
+		  
+		  //female_circles.exit().remove();
+		  
+		  female_circles.enter()
+		  .append('circle')
+		  .transition()
+		  .duration(500)
+		  .attr('class','female_circle')
 		  .attr('cx',function(d){
 				return xscale(d['key']);
 		  })
 		  .attr('cy',function(d){
-				return yscale(d3.sum(d['values'][0]['values'],function(g){return g['values']['survivor_count']}));
+			if(typeof d['values'][0]!='undefined'){
+			if(d['values'][0]['key']=='female'){
+				
+				for(i=0;i<d.values[0].values.length;i++)
+				{
+					if(d.values[0].values[i].key==pclass)
+					{
+						r=(d['values'][0]['values'][i]['values']['survival_percentage'])
+						return yscale(r);
+					}
+				
+				} 
+			r=0;	
+			return yscale(r);	
+			}
+			else
+			{	r=0;
+				return yscale(r);
+			}
+			
+		}
+		
+		}
+		)
+		  .attr('r',3)
+		  .attr('fill','#E75480')
+		  .attr('opacity',.7); 
 		  
-		  })
-		  .attr('r',2);
-		  */
 		
 		d3.select('svg').selectAll('.line').remove();
 		
@@ -176,7 +279,7 @@ function draw_line(pclass)
 		  .attr('class','female line')
 		  .attr('d',female_line(nested_data));
 		  
-		//d3.select('svg').selectAll()
+		
 		  
 }
 
@@ -213,11 +316,11 @@ nested_data= d3.nest()
 						
 						var survivor_count=leaves.filter(function(d){return d['Survived']==1}).length;
 						var dead_count=leaves.filter(function(d){return d['Survived']==0}).length;
-						var survial_percentage=(survivor_count*100)/(survivor_count+dead_count)
+						var survival_percentage=(survivor_count*100)/(survivor_count+dead_count)
 						return{
 							survivor_count,
 							dead_count,
-							survial_percentage
+							survival_percentage
 						}
 					
 					})
@@ -349,7 +452,7 @@ draw_line('1');
 
 <body>
 <script type="text/javascript">
-d3.csv("titanic_data.csv",function(d){
+d3.csv("data/titanic_data.csv",function(d){
 	d['Age']=+d['Age'];
 	return d;
 },
