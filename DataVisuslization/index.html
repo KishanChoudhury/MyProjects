@@ -38,32 +38,19 @@ h2{
 </style>
 <script type="text/javascript">
 
-var nested_data,xscale,yscale;
+var nested_data,x0scale,x1scale,color,yscale,height,width,margin;
 var Agegroups=[];
 var pclass_list=[];
+var nested_data_total;
 function key_func(d)
 		{
 		return d['key'];}
 function map_age_to_group(x){
-    if(x<10)
-    {    return '0-9';}
-    else if(x<20)
-    {    return '10-19';}
-    else if(x<30)
-    {    return '20-29';}
-    else if(x<40)
-    {    return '30-39';}
-    else if(x<50)
-    {    return '40-49';}
-    else if(x<60)
-    {    return '50-59';}
-    else if(x<70)
-    {    return '60-69';}
-    else if(x<80)
-    {    return '70-79';}
+    if(x<15)
+    {    return 'Children';}
     else
 	{
-        return '80+'
+        return 'Adult'
 	}
 }
 //function to sort nested data
@@ -75,212 +62,36 @@ function sort_data(a,b){
 }
 
 
-function draw_line(pclass)
+function draw_bar(agegroup,plot_data)
 {
+	var i=0;
+	if(agegroup=='Children')
+		i=1;
 		
-		var female_line = d3.svg.line()
-		.x(function(d) { return xscale(d['key']); })
-		.y(function(d) { 
-		if(typeof d['values'][0]!='undefined'){
-			if(d['values'][0]['key']=='female'){
-				//debugger;
-				for(i=0;i<d.values[0].values.length;i++)
-				{
-					if(d.values[0].values[i].key==pclass)
-					{
-						return yscale(d['values'][0]['values'][i]['values']['survival_percentage']);
-					}
-				
-				} 
-				
-			return yscale(0);	
-			}
-			else
-			{
-				return yscale(0);
-			}
-			
-		}
-		});
-		
-		
-		var male_line = d3.svg.line()
-		.x(function(d) { return xscale(d['key']); })
-		.y(function(d) { 
-		
+	d3.selectAll('.pclass').remove();	
+	var pclass=d3.select('svg').selectAll('.pclass').data(plot_data).enter().append('g').attr('class','pclass').attr('transform',function(d){ return 'translate('+x0scale(d.key)+',0)';});
+	pclass.selectAll("rect")
+      .data(function(d) { return d.values; })
+    .enter().append("rect")
+      .attr("width", x1scale.rangeBand())
+      .attr("x", function(d) { return x1scale(d.key); })
+      .attr("y", function(d) { 
+	  if(agegroup=='All')
+		return yscale(d.values.survival_percentage);
+	  else
+	    return yscale(d.values[i].values.survival_percentage); 
+	  })
+      .attr("height", function(d) { 
+	  if(agegroup=='All')
+		return height-yscale(d.values.survival_percentage);
+	  else
+	    return height - yscale(d.values[i].values.survival_percentage); })
+      .style("fill", function(d) { return color(d.key); });
+	  
 
-		
-		if(typeof d['values'][1] !='undefined'){
-			if (d['values'][1]['key']=='male')
-			{
-				for(i=0;i<d.values[1].values.length;i++)
-				{
-					if(d.values[1].values[i].key==pclass)
-					{
-						return yscale(d['values'][1]['values'][i]['values']['survival_percentage']);
-					}
-				
-				} 
-				return yscale(0); 
-				
-			}
-		}
-		else if(typeof d['values'][0]!='undefined'){
-			if(d['values'][0].key=='male')
-			{
-				for(i=0;i<d.values[0].values.length;i++)
-				{
-					if(d.values[0].values[i].key==pclass)
-					{
-						return yscale(d['values'][0]['values'][i]['values']['survival_percentage']);
-					}
-				
-				} 
-				return yscale(0);
-					
-			}
-		}
-		else
-		{
-				return yscale(0);
-		}
-		
-		});
 	
-		
-		
-	
-		var r;
-		//plotting male points
-		d3.select('svg').select('g.male_circles').remove();
-		d3.select('svg').select('g.female_circles').remove();
-		
-		var male_circles= d3.select('svg')
-		  .append('g').attr('class','male_circles')	
-		  .selectAll('circle')
-		  .data(nested_data,key_func)
-		  
-		
-		 // male_circles.exit().remove();
-		  
-		  male_circles.enter()
-		  .append('circle')
-		  .transition()
-		  .duration(500)
-		  .attr('class','male_circle')
-		  .attr('cx',function(d){
-				
-				return xscale(d['key']);
-		  })
-		  .attr('cy',function(d){
-			if(typeof d['values'][1] !='undefined'){
-			if (d['values'][1]['key']=='male')
-			{
-				for(i=0;i<d.values[1].values.length;i++)
-				{
-					if(d.values[1].values[i].key==pclass)
-					{	
-						r=(d['values'][1]['values'][i]['values']['survival_percentage']);
-						return yscale(r);
-					}
-				
-				} 
-				r=0;
-				return yscale(r); 
-				
-			}
-		}
-		else if(typeof d['values'][0]!='undefined'){
-			if(d['values'][0].key=='male')
-			{
-				for(i=0;i<d.values[0].values.length;i++)
-				{
-					if(d.values[0].values[i].key==pclass)
-					{
-						r=(d['values'][0]['values'][i]['values']['survival_percentage']);
-						return yscale(r);
-					}
-				
-				} 
-				r=0;
-				return yscale(r);
-					
-			}
-		}
-		else
-		{		
-				r=0;
-				return yscale(r);
-		}
-		
-		}
-		)
-		  .attr('r',3)
-		   .attr('fill','steelblue')
-		  .attr('opacity',.7);
-		  
-		r=0;  
-	    //plotting female points
-		var female_circles=d3.select('svg')
-		  .append('g').attr('class','female_circles')		
-		  .selectAll('circle')
-		  .data(nested_data,key_func)
-		  
-		  //female_circles.exit().remove();
-		  
-		  female_circles.enter()
-		  .append('circle')
-		  .transition()
-		  .duration(500)
-		  .attr('class','female_circle')
-		  .attr('cx',function(d){
-				return xscale(d['key']);
-		  })
-		  .attr('cy',function(d){
-			if(typeof d['values'][0]!='undefined'){
-			if(d['values'][0]['key']=='female'){
-				
-				for(i=0;i<d.values[0].values.length;i++)
-				{
-					if(d.values[0].values[i].key==pclass)
-					{
-						r=(d['values'][0]['values'][i]['values']['survival_percentage'])
-						return yscale(r);
-					}
-				
-				} 
-			r=0;	
-			return yscale(r);	
-			}
-			else
-			{	r=0;
-				return yscale(r);
-			}
-			
-		}
-		
-		}
-		)
-		  .attr('r',3)
-		  .attr('fill','#E75480')
-		  .attr('opacity',.7); 
-		  
-		
-		d3.select('svg').selectAll('.line').remove();
-		
-		d3.select('svg')
-		  .append('path')
-		  .attr('class','male line')
-		  .attr('d',male_line(nested_data))
 
-		
-		d3.select('svg')
-		  .append('path')
-		  .attr('class','female line')
-		  .attr('d',female_line(nested_data));
-		  
-		
-		  
+	
 }
 
 function draw(data){
@@ -309,9 +120,9 @@ data.forEach(function(d)
 
 //Aggregating the data
 nested_data= d3.nest()
-					.key(function(d){return d.Age_group;})
-					.key(function(d){return d.Sex;}).sortKeys(d3.ascending)
 					.key(function(d){return d.Pclass;})
+					.key(function(d){return d.Sex;}).sortKeys(d3.ascending)
+					.key(function(d){return d.Age_group;}).sortKeys(d3.ascending)
 					.rollup(function(leaves){
 						
 						var survivor_count=leaves.filter(function(d){return d['Survived']==1}).length;
@@ -327,8 +138,26 @@ nested_data= d3.nest()
 					.entries(data)
 					.sort(sort_data);
 
+nested_data_total= d3.nest()
+					.key(function(d){return d.Pclass;})
+					.key(function(d){return d.Sex;}).sortKeys(d3.ascending)
+					.rollup(function(leaves){
+						
+						var survivor_count=leaves.filter(function(d){return d['Survived']==1}).length;
+						var dead_count=leaves.filter(function(d){return d['Survived']==0}).length;
+						var survival_percentage=(survivor_count*100)/(survivor_count+dead_count)
+						return{
+							survivor_count,
+							dead_count,
+							survival_percentage
+						}
 					
-	var margin = 75,
+					})
+					.entries(data)
+					.sort(sort_data);					
+
+					
+	    margin = 75,
         width = 1300 - margin,
         height = 600 - margin;
 		nested_data.forEach(
@@ -342,105 +171,73 @@ nested_data= d3.nest()
 			}
 		
 		);
-
-		xscale=d3.scale.ordinal()
-							.domain(Agegroups)
-							.rangePoints([margin,width]);
-	    yscale=d3.scale.linear()
-								  .domain([0,100])
-								  .range([height,margin]);
-		var xaxis=d3.svg.axis()
-						.scale(xscale)
-						.orient('bottom');
-		var yaxis=d3.svg.axis()
-				 .scale(yscale)
-				 .orient("left");
+		
+		var barpad=.5;
+		//setting the scales
+		x0scale=d3.scale.ordinal().domain(['3','2','1']).rangeBands([width,margin],barpad);
+		x1scale=d3.scale.ordinal().domain(['male','female']).rangeBands([0,x0scale.rangeBand()]);
+	    yscale=d3.scale.linear().domain([0,100]).range([height,margin]);
+		color = d3.scale.ordinal().domain(['male','female']).range(["#4682b4", "#E75480"]);
+		//setting the axes
+		var xaxis=d3.svg.axis().scale(x0scale).orient('bottom');
+		var yaxis=d3.svg.axis().scale(yscale).orient("left");
 		//Title for the chart
 		d3.select('body').append('h2').text('Titanic Survival Analysis');
-		
-		//drawing buttons
-	var buttons=d3.select('body')
-					  .append('div')
-					  .attr('class','pclass_buttons').attr('style','height:18px;width:1150px;text-align:right;background:white').text('Pclass')
+		//Adding the buttons
+		var buttons=d3.select('body').append('div').attr('class','agegroup_buttons').attr('style','height:18px;width:1150px;text-align:left;background:white').text('Age Group')
 					  .selectAll('div')					  
-					  .data(pclass_list)
+					  .data(['All','Children','Adult'])
 					  .enter()
 					  .append('div')
-					  .attr('class','Pclass')
+					  .attr('class','agegroup')
 					  .text(function(d){
 							return d;
 					  })
 					  .attr('style',function(d,i){
-							return 'float:left;position:relative;left:'+(width-(3-i)*20)+'px;text-align:center;background:#00CED1;border-color:black;border-width:2px;width:40px;height:18px';
+							return 'float:left;position:relative;left:'+(width/2-(3-i)*50)+'px;text-align:center;background:#00CED1;border-color:black;border-width:2px;width:80px;height:18px';
 					  });
+		//Adding SVG element
+		var svg = d3.select("body").append("svg").attr("width", width + margin).attr("height", height + margin)
+		d3.select('svg').append('g').attr('class', 'chart');
+		d3.select('g').append('g').attr('class','x axis').attr('transform','translate(0,'+height+')').call(xaxis);
+		d3.select('g').append('g').attr('class','y axis').attr('transform','translate('+margin+',0)').call(yaxis);
+		//Adding legends
+		var legend = svg.selectAll(".legend").data(['male','female']).enter().append("g").attr("class", "legend").attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+		legend.append("rect").attr("x", width - 18).attr("width", 18).attr("height", 18).style("fill", color);
+		legend.append("text").attr("x", width - 24).attr("y", 9).attr("dy", ".35em").style("text-anchor", "end").text(function(d) { return d; });
+		//Adding axis labels
+		 svg.append("text")
+            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (margin/2) +","+(height/2)+")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+            .text("Survival Percentage");
+
+        svg.append("text")
+            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (width/2) +","+(height+margin/2)+")")  // centre below axis
+            .text("Passenger Class");
+		draw_bar('All',nested_data_total);
+		
+		
+
 					  buttons.on('click',function(d)
 					  {
-							d3.selectAll('.Pclass')
+							d3.selectAll('.agegroup')
 							  .transition()
-							  .duration(500)
+							  .duration(1000)
 							  .style('background','#00CED1')
 							  .style('color','black');
 							d3.select(this)
 							  .transition()
-							  .duration(500)
+							  .duration(1000)
 							  .style('background','lightBlue')
 							  .style('color','white');
-							draw_line(d);
+							if(d=="All")
+								draw_bar(d,nested_data_total);
+							else
+								draw_bar(d,nested_data);
 					  }
 					  )
 					  
-		var svg = d3.select("body")
-					.append("svg")
-					.attr("width", width + margin)
-					.attr("height", height + margin)
-		svg.append('h1').text('Survival Analysis: Titanic');
-		
-					d3.select('svg').append('g')
-					.attr('class', 'chart');
-		d3.select('g')
-			   .append('g').attr('class','x axis')
-			   .attr('transform','translate(0,'+height+')')
-			   .call(xaxis);
-		
-		d3.select('g')
-				.append('g').attr('class','y axis')
-							.attr('transform','translate('+margin+',0)')
-							.call(yaxis);
-	
-		
-
-
-		
-draw_line('1');
-
-		  //legends
-		  var radius=3;
-		   var legend=d3.select('svg').append('g').attr('class','legend').attr('transform','translate('+(width/2-50)+','+(height+50)+')')
-		  .selectAll('g')
-		  .data(['Male','Female'])
-		  .enter()
-		  .append('g');
-		  legend.append('circle')
-				.attr('cx',function(d,i){
-					return i*70;
-				})
-				.attr('fill',function(d){
-					if (d=='Male'){
-						return 'steelblue';
-					}
-					else{
-						return '#E75480';
-					}
-				})
-				.attr('r',radius);
-			legend.append("text")
-				.attr('y',function(d,i){
-					return 5;
-				})
-				.attr('x',function(d,i){return i*70+5;})
-				.text(function(d){
-					return d;
-				});
 			
 
 
