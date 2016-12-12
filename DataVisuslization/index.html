@@ -42,6 +42,7 @@ var nested_data,x0scale,x1scale,color,yscale,height,width,margin;
 var Agegroups=[];
 var pclass_list=[];
 var nested_data_total;
+var Age_interval;
 function key_func(d)
 		{
 		return d['key'];}
@@ -61,9 +62,10 @@ function sort_data(a,b){
 		return 0;
 }
 
-
 function draw_bar(agegroup,plot_data)
 {
+
+	d3.select('body').select('h2').text('Titanic Survival Analysis:'+agegroup);
 	var i=0;
 	if(agegroup=='Children')
 		i=1;
@@ -86,6 +88,8 @@ function draw_bar(agegroup,plot_data)
 		return height-yscale(d.values.survival_percentage);
 	  else
 	    return height - yscale(d.values[i].values.survival_percentage); })
+	  .transition()
+	  .duration(1000)
       .style("fill", function(d) { return color(d.key); });
 	  
 
@@ -162,12 +166,12 @@ nested_data_total= d3.nest()
         height = 600 - margin;
 		nested_data.forEach(
 			function(d){
-				Agegroups.push(d.key);
+				pclass_list.push(d.key);
 			}
 		)
 		nested_data[0].values[0].values.forEach(
 			function(d){
-				pclass_list.push(d.key);
+				Agegroups.push(d.key);
 			}
 		
 		);
@@ -216,12 +220,17 @@ nested_data_total= d3.nest()
             .attr("transform", "translate("+ (width/2) +","+(height+margin/2)+")")  // centre below axis
             .text("Passenger Class");
 		draw_bar('All',nested_data_total);
+		var i=0;
+		Agegroups.push('All');
+		Age_interval=0;
 		
+		
+							
 		
 
 					  buttons.on('click',function(d)
-					  {
-							d3.selectAll('.agegroup')
+					  {     
+					        d3.selectAll('.agegroup')
 							  .transition()
 							  .duration(1000)
 							  .style('background','#00CED1')
@@ -235,13 +244,33 @@ nested_data_total= d3.nest()
 								draw_bar(d,nested_data_total);
 							else
 								draw_bar(d,nested_data);
+							
+							if (Age_interval!=0)
+							{
+								clearInterval(Age_interval);
+								Age_interval=0;
+								
+							}
+							
 					  }
 					  )
-					  
+			  
+			Age_interval=setInterval(function(){
 			
-
-
-					   
+			if(Agegroups[i]=="All")
+				draw_bar(Agegroups[i],nested_data_total);
+			else
+				draw_bar(Agegroups[i],nested_data);
+			
+			i=(i+1)%3;
+			
+		
+		},2000);
+        
+		
+		
+		
+				   
 
 }
 </script>
