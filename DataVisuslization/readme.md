@@ -22,6 +22,7 @@ Feedback:
 Link:
 https://discussions.udacity.com/t/need-feedback-for-visualization-please-help/201295/2
 
+Feedback 1:
 Hi Kishan,
 
 Good work! I have two quick suggestons:
@@ -29,6 +30,23 @@ Good work! I have two quick suggestons:
 Consider label the axes for easier understanding. Also consider adding some narrative to highlight the message you want to convey, then you can optimize your visualization based on that;
 The line chart does show the main structure in the data, but I wonder whether a bar chart like1 this can make the viz even more visually engaging and pleasing.
 I hope this helps.
+
+Feedback 2:
+
+What do you notice in the visualization? 
+	More females survived
+What questions do you have about the data? 
+	Is the data authentic?
+What relationships do you notice? 
+	Male survival rate tends to decrease with age and Pclass
+What do you think is the main takeaway from this visualization? 
+	Females tend to survive more 
+Is there something you don’t understand in the graphic? 
+	no
+
+Feedback 3:
+
+Please add labels for better clarity.
 
 Resources:
 https://discussions.udacity.com/t/need-feedback-for-visualization-please-help/201295/2
