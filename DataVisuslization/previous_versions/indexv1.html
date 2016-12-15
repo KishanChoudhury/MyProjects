@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+<script src="d3.v3.js"></script>
+<style>
+.axes line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
+.male_line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.female_line {
+  fill: none;
+  stroke: orange;
+  stroke-width: 1.5px;
+}
+
+
+
+</style>
+<script type="text/javascript">
+function map_age_to_group(x){
+    if(x<10)
+    {    return '0-9';}
+    else if(x<20)
+    {    return '10-19';}
+    else if(x<30)
+    {    return '20-29';}
+    else if(x<40)
+    {    return '30-39';}
+    else if(x<50)
+    {    return '40-49';}
+    else if(x<60)
+    {    return '50-59';}
+    else if(x<70)
+    {    return '60-69';}
+    else if(x<80)
+    {    return '70-79';}
+    else
+	{
+        return '80+'
+	}
+}
+function draw(data){
+//Calculating male and female mean age to populate missing values
+var male_avg,female_avg;
+	male_avg=d3.mean(data.filter(function(d){
+		return d['Sex']==='male'& d['Age']!=0;
+	}),function(d){return d['Age']});
+	female_avg=d3.mean(data.filter(function(d){
+		return d['Sex']==='female' & d['Age']!=0;
+	}),function(d){return d['Age']});
+	
+//Setting the average male and female age as calculated in the previous step	
+data.forEach(function(d)
+{
+	if (d['Sex']==='male' & d['Age']===0){
+			d['Age']=male_avg;
+		}
+	if (d['Sex']==='female' & d['Age']===0){
+			d['Age']=female_avg;
+		}
+	d['Age_group']=map_age_to_group(d['Age']);		
+	return d;	
+}	
+)		
+
+//function to sort nested data
+function sort_data(a,b){
+	if(a.key>b.key)
+		return 1;
+	else	
+		return 0;
+}
+
+//Aggregating the data
+var nested_data= d3.nest()
+					.key(function(d){return d.Age_group;})
+					.key(function(d){return d.Sex;}).sortKeys(d3.ascending)
+					.key(function(d){return d.Pclass;})
+					.rollup(function(leaves){
+						
+						var survivor_count=leaves.filter(function(d){return d['Survived']==1}).length;
+						var dead_count=leaves.filter(function(d){return d['Survived']==0}).length;
+						
+						return{
+							survivor_count,
+							dead_count
+						}
+					
+					})
+					.entries(data)
+					.sort(sort_data);
+
+		var margin = 75,
+        width = 1400 - margin,
+        height = 600 - margin;
+	
+		var Agegroups=[];
+		nested_data.forEach(
+			function(d){
+				Agegroups.push(d.key);
+			}
+		)
+
+		var xscale=d3.scale.ordinal()
+							.domain(Agegroups)
+							.rangePoints([margin,width]);
+		var yscale=d3.scale.linear()
+								  .domain([0,200])
+								  .range([height,margin]);
+		var xaxis=d3.svg.axis()
+						.scale(xscale)
+						.orient('bottom');
+		var yaxis=d3.svg.axis()
+				 .scale(yscale)
+				 .orient("left");
+		var svg = d3.select("body")
+					.append("svg")
+					.attr("width", width + margin)
+					.attr("height", height + margin)
+					.append('g')
+					.attr('class', 'chart');
+		d3.select('g')
+			   .append('g').attr('class','x axis')
+			   .attr('transform','translate(0,'+height+')')
+			   .call(xaxis);
+		
+		d3.select('g')
+				.append('g').attr('class','y axis')
+							.attr('transform','translate('+margin+',0)')
+							.call(yaxis);
+	
+		
+		var male_line = d3.svg.line()
+		.x(function(d) { return xscale(d['key']); })
+		.y(function(d) { return yscale(d3.sum(d['values'],
+		function(g){
+				debugger;
+			/*
+			if (typeof g[0]['values']['values']['survivor_count']!='undefined')
+				return g[0]['values']['values']['survivor_count'];
+			else 
+				return 0;
+			*/
+		}
+		));
+		
+		});
+	
+		var female_line = d3.svg.line()
+		.x(function(d) { return xscale(d['key']); })
+		.y(function(d) { return yscale(d3.sum(d['values'],
+		function(g){
+			if (typeof g[1]['values']['values']['survivor_count']!='undefined')
+				return g[1]['values']['values']['survivor_count'];
+			else 
+				return 0;
+		}));
+		
+		});
+		
+	
+		/*
+		d3.select('svg')
+		  .selectAll('circle')
+		  .data(nested_data)
+		  .enter()
+		  .append('circle')
+		  .attr('cx',function(d){
+				return xscale(d['key']);
+		  })
+		  .attr('cy',function(d){
+				return yscale(d3.sum(d['values'][0]['values'],function(g){return g['values']['survivor_count']}));
+		  
+		  })
+		  .attr('r',2);
+		  */
+		
+	
+		d3.select('svg')
+		  .append('path')
+		  .attr('class','male_line')
+		  .attr('d',male_line(nested_data));
+		/*
+		d3.select('svg')
+		  .append('path')
+		  .attr('class','female_line')
+		  .attr('d',female_line(nested_data));
+		 */ 
+ 
+debugger;
+					   
+
+}
+</script>
+</head>
+
+<body>
+<script type="text/javascript">
+d3.csv("titanic_data.csv",function(d){
+	d['Age']=+d['Age'];
+	return d;
+},
+draw);
+</script>
+</body>
+</html>

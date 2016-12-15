@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<style>
+h2{
+	text-align:center;
+}
+
+.axes line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
+.male {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.female {
+  fill: none;
+  stroke: #E75480;
+  stroke-width: 1.5px;
+}
+
+
+
+
+</style>
+<script type="text/javascript">
+
+var nested_data,x0scale,x1scale,color,yscale,height,width,margin;
+var Agegroups=[];
+var pclass_list=[];
+var nested_data_total;
+function key_func(d)
+		{
+		return d['key'];}
+function map_age_to_group(x){
+    if(x<15)
+    {    return 'Children';}
+    else
+	{
+        return 'Adult'
+	}
+}
+//function to sort nested data
+function sort_data(a,b){
+	if(a.key>b.key)
+		return 1;
+	else	
+		return 0;
+}
+
+
+function draw_bar(agegroup)
+{
+
+	var pclass=d3.select('svg').selectAll('.pclass').data(nested_data).enter().append('g').attr('class','pclass').attr('transform',function(d){ return 'translate('+x0scale(d.key)+',0)';});
+	pclass.selectAll("rect")
+      .data(function(d) { return d.values; })
+    .enter().append("rect")
+      .attr("width", x1scale.rangeBand())
+      .attr("x", function(d) { return x1scale(d.key); })
+      .attr("y", function(d) { return yscale(d.values[1].values.survival_percentage); })
+      .attr("height", function(d) { return height - yscale(d.values[1].values.survival_percentage); })
+      .style("fill", function(d) { return color(d.key); });
+	  
+
+	
+
+	
+}
+
+function draw(data){
+//Calculating male and female mean age to populate missing values
+var male_avg,female_avg;
+	male_avg=d3.mean(data.filter(function(d){
+		return d['Sex']==='male'& d['Age']!=0;
+	}),function(d){return d['Age']});
+	female_avg=d3.mean(data.filter(function(d){
+		return d['Sex']==='female' & d['Age']!=0;
+	}),function(d){return d['Age']});
+	
+//Setting the average male and female age as calculated in the previous step	
+data.forEach(function(d)
+{
+	if (d['Sex']==='male' & d['Age']===0){
+			d['Age']=male_avg;
+		}
+	if (d['Sex']==='female' & d['Age']===0){
+			d['Age']=female_avg;
+		}
+	d['Age_group']=map_age_to_group(d['Age']);		
+	return d;	
+}	
+)		
+
+//Aggregating the data
+nested_data= d3.nest()
+					.key(function(d){return d.Pclass;})
+					.key(function(d){return d.Sex;}).sortKeys(d3.ascending)
+					.key(function(d){return d.Age_group;}).sortKeys(d3.ascending)
+					.rollup(function(leaves){
+						
+						var survivor_count=leaves.filter(function(d){return d['Survived']==1}).length;
+						var dead_count=leaves.filter(function(d){return d['Survived']==0}).length;
+						var survival_percentage=(survivor_count*100)/(survivor_count+dead_count)
+						return{
+							survivor_count,
+							dead_count,
+							survival_percentage
+						}
+					
+					})
+					.entries(data)
+					.sort(sort_data);
+
+nested_data_total= d3.nest()
+					.key(function(d){return d.Pclass;})
+					.key(function(d){return d.Sex;}).sortKeys(d3.ascending)
+					.rollup(function(leaves){
+						
+						var survivor_count=leaves.filter(function(d){return d['Survived']==1}).length;
+						var dead_count=leaves.filter(function(d){return d['Survived']==0}).length;
+						var survival_percentage=(survivor_count*100)/(survivor_count+dead_count)
+						return{
+							survivor_count,
+							dead_count,
+							survival_percentage
+						}
+					
+					})
+					.entries(data)
+					.sort(sort_data);					
+
+					
+	    margin = 75,
+        width = 1300 - margin,
+        height = 600 - margin;
+		nested_data.forEach(
+			function(d){
+				Agegroups.push(d.key);
+			}
+		)
+		nested_data[0].values[0].values.forEach(
+			function(d){
+				pclass_list.push(d.key);
+			}
+		
+		);
+		
+		var barpad=.5;
+		//setting the scales
+		x0scale=d3.scale.ordinal().domain(['3','2','1']).rangeBands([width,margin],barpad);
+		x1scale=d3.scale.ordinal().domain(['male','female']).rangeBands([0,x0scale.rangeBand()]);
+	    yscale=d3.scale.linear().domain([0,100]).range([height,margin]);
+		color = d3.scale.ordinal().domain(['male','female']).range(["#4682b4", "#E75480"]);
+		//setting the axes
+		var xaxis=d3.svg.axis().scale(x0scale).orient('bottom');
+		var yaxis=d3.svg.axis().scale(yscale).orient("left");
+		//Title for the chart
+		d3.select('body').append('h2').text('Titanic Survival Analysis');
+		//Adding SVG element
+		var svg = d3.select("body").append("svg").attr("width", width + margin).attr("height", height + margin)
+		d3.select('svg').append('g').attr('class', 'chart');
+		d3.select('g').append('g').attr('class','x axis').attr('transform','translate(0,'+height+')').call(xaxis);
+		d3.select('g').append('g').attr('class','y axis').attr('transform','translate('+margin+',0)').call(yaxis);
+		//Adding legends
+		var legend = svg.selectAll(".legend").data(['male','female']).enter().append("g").attr("class", "legend").attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+		legend.append("rect").attr("x", width - 18).attr("width", 18).attr("height", 18).style("fill", color);
+		legend.append("text").attr("x", width - 24).attr("y", 9).attr("dy", ".35em").style("text-anchor", "end").text(function(d) { return d; });
+		
+		draw_bar('Children');
+		
+/*
+		
+
+
+		  //legends
+		  var radius=3;
+		   var legend=d3.select('svg').append('g').attr('class','legend').attr('transform','translate('+(width/2-50)+','+(height+50)+')')
+		  .selectAll('g')
+		  .data(['Male','Female'])
+		  .enter()
+		  .append('g');
+		  legend.append('circle')
+				.attr('cx',function(d,i){
+					return i*70;
+				})
+				.attr('fill',function(d){
+					if (d=='Male'){
+						return 'steelblue';
+					}
+					else{
+						return '#E75480';
+					}
+				})
+				.attr('r',radius);
+			legend.append("text")
+				.attr('y',function(d,i){
+					return 5;
+				})
+				.attr('x',function(d,i){return i*70+5;})
+				.text(function(d){
+					return d;
+				});
+			
+
+
+					   
+*/
+}
+</script>
+</head>
+
+<body>
+<script type="text/javascript">
+d3.csv("data/titanic_data.csv",function(d){
+	d['Age']=+d['Age'];
+	return d;
+},
+draw);
+</script>
+</body>
+</html>
