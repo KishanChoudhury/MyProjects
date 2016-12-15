@@ -4,7 +4,9 @@ Summary:
 
 This project tries to find the survival patterns,if any, of the passengers in the Titanic accident. We analyze the percentage of Survivors with respect to different parameters 
 such as gender,age,Pclass,etc. The data visualization created as part of this project is an attempt to convey our findings about the data to a broader audience in an effective 
-manner.
+manner. After the analysis, we find that, Female survival percentage is more than Males. Also, Children survival percentage is more than Adults. Moreover, socio-economic status, 
+which is reflected from the passenger class also had an affect on survival. Passengers in the upper class were saved first and then came the turn of the people in the lower 
+classes.
 
 More information about the data is present in the link below:
 https://www.kaggle.com/c/titanic/data
